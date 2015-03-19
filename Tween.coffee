@@ -1,15 +1,47 @@
-﻿# CoffeeScript
+﻿
 
-
+# The tween class of Gotham
+# This class animates objects of any format
+# It features to reach deep proprerties in an object
+# @example How to use
+#    # Start
+#    tweenTo =
+#      scale:
+#        x: 2
+#        y: 2
+#      rotation: 0.1
+#
+#    # End
+#    tweenBack =
+#      scale:
+#        x: 1
+#        y: 1
+#      rotation: -0.1
+#
+#    tween = new Tween object
+#    tween.startDelay 500
+#    tween.repeat(Infinity)
+#    tween.easing Tween.Easing.Circular.InOut
+#    tween.to tweenTo, 1500
+#    tween.to tweenBack, 1500
+#    tween.onStart ->
+#      console.log @ + " started!"
+#    tween.start()
 class Tween
 
-  # All Tweening Objects
+  # @property [Array[Tween]] List of current/ ongoing Tweens
   @_objects = []
+
+  # @property [Array[Tween]] List of old/completed tweens
   @_oldObjects = []
+
+  # @property [Long] Current runtime time, Retreived from GameLoop's update()
   @_currentTime = 0
 
 
-
+  # Initializes the Tween object
+  # Does however not start the tween
+  # Adds "this" tween to the Static tween array
   constructor: (object) ->
 
 
@@ -37,6 +69,8 @@ class Tween
 
     Tween._objects.push(@)
 
+  # Retrieve "this" tween's TweenChain
+  # @return [Array[Object]] The tween Chain
   getTweenChain: ->
     return @_tweenChain
 
@@ -51,11 +85,16 @@ class Tween
 ##
 ############################################
 
+  # Starts the tween calling the _onStart callback
   start: ->
     @_onStart(@_object)
 
+  # Stops the tween calling the _onStop callback
+  # TODO - Implement
   stop: ->
 
+  # Pauses the tween calling the _onPause callback
+  # TODO - Implement
   pause: ->
 
 
@@ -67,12 +106,23 @@ class Tween
 ##
 ############################################
 
+  # Set Initial Start delay of the tween
+  # @param [Long] time Time in milliseconds
   startDelay: (time) ->
     @_startDelay = time
 
+  # Set the easing algorithm for the tween
+  # @param [Tween.Easing] easing The easing algorithm
+  # @example How to use
+  #   obj.easing(Tween.Easing.Linear.None)
+  #
+  # The easing algorithms are found in the Tween.Easing object.
   easing: (easing) ->
     @_easing = easing
 
+  # Add tween action to the tween chain
+  # @param [Object] property The "goal" property of the tween (Where you want the target object to end up)
+  # @param [Long] duration Duration of the tween from start --> end (In milliseconds)
   to: (property, duration) ->
 
     path =
@@ -90,6 +140,8 @@ class Tween
     for prop in Tween.flattenKeys property
       @_properties.push(prop)
 
+  # Add a delay between two tween goto's
+  # @param [Long] time Delay in Milliseconds
   delay: (time) ->
 
     if typeof time isnt 'number'
@@ -103,12 +155,20 @@ class Tween
 
     @_tweenChain.push(delayItem)
 
+  # How many times you want to repeat the Tween
+  # To repeat "forever", use Infinity
+  # @param [Integer] num Number of times to repeat
   repeat: (num) ->
     @_remainingRuns = num
 
+
+  # TODO - Needs Documentation ??!?
+  # @param [Object] property The property
   addCutsomProperty: (property) ->
     @_properties.push(property)
 
+  # TODO - Needs Documentation ??!?
+  # @param [Array[Object]] property The properties
   addCutsomProperties: (properties) ->
     for property in properties
       @addProperty(property)
@@ -121,16 +181,27 @@ class Tween
 ##
 ############################################
 
+  # The onUpdate callback
+  # Is called when the tween is updated
+  # @param [Callback] callback The onUpdate callback
   onUpdate: (callback) ->
     @_onUpdate = callback
 
+  # The onComplete callback
+  # Is called when the tween is completed
+  # @param [Callback] callback The onComplete callback
   onComplete: (callback) ->
     @_onComplete = callback
 
+  # The onStart callback
+  # Is called when the tween is started
+  # @param [Callback] callback The onStart callback
   onStart: (callback) ->
     @_onStart = callback
 
-
+  # Update loop of the tween engine ensures that tweening actually happens
+  # IT is called from GameLoop.update()
+  # @param [Long] Render runtime in milliseconds
   @update: (time) ->
     Gotham.Tween._currentTime = time
 
@@ -235,31 +306,11 @@ class Tween
           Tween._oldObjects.push(tweenObject)
 
 
-  @findProps: (start) ->
-    result = {}
-    queue  = [start]
-    level = 0
-    while queue.length > 0
-      item = queue.pop()
-
-      if typeof item is 'object'
-        for next in Object.keys(item)
-          queue.push(item[next])
-
-          # Add it
-          if not result[level]
-            result[level] = []
-
-          if level > 0
-            next = result[(level - 1) ] + "." + next
-          result[level].push(next)
-        #console.log next
-        #console.log("---------")
-        level++
-
-    return result[level-1]
-
-
+  # Function for finding properties recursively in an Object
+  # @param [Object] obj Start/Parent Node
+  # @param [String] delimiter The Delimeter of the result. Default: "."
+  # @param [Integer] max_depth Max Depth of the recursion
+  # @return [Array] Array with the resulting properties
   @flattenKeys = (obj, delimiter, max_depth) ->
     delimiter = delimiter or '.'
     max_depth = max_depth or 2
@@ -282,7 +333,7 @@ class Tween
 
     recurse obj, [], [], 0
 
-
+  # Easing Algorithms
   @Easing =
     Linear: None: (k) ->
       k
