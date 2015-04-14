@@ -366,9 +366,6 @@ class Tween
         #eval("tween._object.#{prop} = start.#{prop} +  ( end.#{prop} - start.#{prop} ) * #{value}")
 
 
-  Tween.translate: (tween, chainItem) ->
-
-
   Tween.resolve = (obj, path, def, setValue) ->
     i = undefined
     len = undefined
