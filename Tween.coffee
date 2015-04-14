@@ -322,8 +322,6 @@ class Tween
 
       if time > chainItem.endTime
 
-        console.log chainItem
-
         # Increment run counter
         tween._runCounter++
 
@@ -354,7 +352,7 @@ class Tween
       end = chainItem.property
 
       # The elapsed time of the tween
-      elapsed = (time - startTime) / chainItem.duration
+      elapsed = (performance.now() - startTime) / chainItem.duration
       chainItem.elapsed = elapsed
       elapsed = if elapsed > 1 then  1 else elapsed
 
@@ -367,6 +365,8 @@ class Tween
 
         #eval("tween._object.#{prop} = start.#{prop} +  ( end.#{prop} - start.#{prop} ) * #{value}")
 
+
+  Tween.translate: (tween, chainItem) ->
 
 
   Tween.resolve = (obj, path, def, setValue) ->
