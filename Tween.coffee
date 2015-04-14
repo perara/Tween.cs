@@ -1,6 +1,6 @@
-﻿
+﻿'use strict'
 
-# The tween class of Gotham
+﻿# The tween class of Gotham
 # This class animates objects of any format
 # It features to reach deep proprerties in an object
 # @example How to use
@@ -29,11 +29,23 @@
 #    tween.start()
 class Tween
 
-  # @property [Array[Tween]] List of current/ ongoing Tweens
-  @_objects = []
+  class ChainItem
 
-  # @property [Array[Tween]] List of old/completed tweens
-  @_oldObjects = []
+    constructor: ->
+      @property = null
+      @duration = null
+      @startTime = null
+      @endTime = null
+      @inited = false
+      @type = null
+      @next = null
+      @previous = null
+
+
+
+
+  # @property [Array[Tween]] List of current/ ongoing Tweens
+  @_tweens = []
 
   # @property [Long] Current runtime time, Retreived from GameLoop's update()
   @_currentTime = 0
@@ -44,12 +56,18 @@ class Tween
   # Adds "this" tween to the Static tween array
   constructor: (object) ->
 
-
+    # Object which are to be tweened
     @_object = object
-    @_properties = []
-    @_tweenChain = []
 
-    @_startDelay = 0
+    # Chain of tweens to be applied to object
+    @_chain = []
+
+    # Properties to tween
+    @_properties = []
+
+
+
+
     @_easing = Tween.Easing.Linear.None
     @_interpolation = Tween.Interpolation.Linear
 
@@ -58,21 +76,23 @@ class Tween
     @_onComplete = null
     @_onStart = null
 
-    # States
+    # Options
+    @_startDelay = 0
     @_started = false
-    @_paused = false
     @_complete = false
+    @_lastTime = 0
 
-    @_remainingRuns = 0 # Remaining runs the tweet should do (default: 1 time) , Modified by .repeat(xx)
+    @_runCounter = 0
+    @_remainingRuns = 1 # Remaining runs the tweet should do (default: 1 time) , Modified by .repeat(xx)
 
 
 
-    Tween._objects.push(@)
+    Tween._tweens.push(@)
 
   # Retrieve "this" tween's TweenChain
   # @return [Array[Object]] The tween Chain
   getTweenChain: ->
-    return @_tweenChain
+    return @_chain
 
 
 
@@ -87,15 +107,23 @@ class Tween
 
   # Starts the tween calling the _onStart callback
   start: ->
+    @_started = true
     @_onStart(@_object)
 
   # Stops the tween calling the _onStop callback
   # TODO - Implement
   stop: ->
+    @_started = false
+    @_complete = true
 
   # Pauses the tween calling the _onPause callback
   # TODO - Implement
   pause: ->
+    @_started = false
+
+  unpause: ->
+    @_started = true
+
 
 
 
@@ -125,16 +153,36 @@ class Tween
   # @param [Long] duration Duration of the tween from start --> end (In milliseconds)
   to: (property, duration) ->
 
-    path =
-      "property" : property # The Property to translate to
-      "duration" : duration # Duration of the tween event
-      "startTime" : null # Set when starting tween .start()
-      "endTime" : null # Set when starting tween .start()
-      "inited" : false
-      "type" : "translate" # The type of the tweenEvent
+    newPath = new ChainItem()
+    console.log newPath
+    newPath.property = property # The Property to translate to
+    newPath.duration = duration # Duration of the tween event
+    newPath.startTime = null # Set when starting tween .start()
+    newPath.endTime = null # Set when starting tween .start()
+    newPath.inited = false
+    newPath.type = "translate" # The type of the tweenEvent
+    newPath.next = null
+    newPath.previous = null
+
+    if @_chain.length > 0
+      # Retrieve last node in list
+      last = @_chain[@_chain.length-1]
+      last.next = newPath
+
+      # Retrieve first node in list
+      first = @_chain[0]
+      first.previous = newPath
+
+      newPath.previous = last
+      newPath.next = first
+    else
+      newPath.previous = newPath # Self reference
+      newPath.next = newPath
+
+
 
     # Add to the tweenChain
-    @_tweenChain.push(path)
+    @_chain.push(newPath)
 
     # Add properties to the property list
     for prop in Tween.flattenKeys property
@@ -153,7 +201,7 @@ class Tween
       "endTime" : null # Set when starting tween .start()
       "type" : "delay"
 
-    @_tweenChain.push(delayItem)
+    @_chain.push(delayItem)
 
   # How many times you want to repeat the Tween
   # To repeat "forever", use Infinity
@@ -205,105 +253,108 @@ class Tween
   @update: (time) ->
     Gotham.Tween._currentTime = time
 
-    objects = Tween._objects
+    # Return if no tweens
+    if Tween._tweens.length <= 0
+      return
 
-    # Check if Empty for objects
-    if objects.length > 0
+    # Iterate through each of the tweens
+    for tween in Tween._tweens
 
-      for tweenObject in objects
+      # Because we delete directly from _tweens array, it may iterate over a undefined node (if previous was deleted. This causes undefined tween. But IGNORE it)
+      if not tween
+        continue
 
-        # TODO , Any consequences in having the tweenObject going undefined?
-        if tweenObject is undefined
-          continue
+      # Continue if tween is paused
+      if not tween._started
+        continue
 
-        # Pass if not yet at start time
-        if time < tweenObject._startTime
-          continue
+      # Continue if tween is not yet started
+      if time < tween._startTime
+        continue
 
-        # Skip if tween complete TODO - Should be in separate list
-        if tweenObject._complete
-          continue
-
-
-        if tweenObject._tweenChain.length > 0
-
-
-          tween = tweenObject._tweenChain[0]
-
-
-          # Set tweet start and entime if not inited
-          if !tween.inited
-            tween["startTime"] =  time
-            tween["endTime"] = tween["startTime"] + tween["duration"]
-
-            tween["startPos"] = {}
-            for property in tweenObject._properties
-              key = property.split('.')[0]
-              value = tweenObject._object[key]
-              tween["startPos"][key] = value
-
-            tween.inited = true
+      # Continue and remove if tween is complete
+      if tween._complete
+        tween._onComplete(tween._object)
+        Tween._tweens.remove(tween)
+        continue
 
 
+      # Set Tween to done if no items in chain
+      if tween._chain.length <= 0 or tween._remainingRuns <= 0
+        tween._complete = true
+        continue
+
+      # Fetch chainItem
+      chainItem = tween._chain[tween._runCounter %% tween._chain.length]
 
 
-          # Remove if old tweenItem
-          if time > tween.endTime
+      # Initialize Chain Item
+      if !chainItem.inited
+        chainItem["startTime"] =  performance.now()
+        chainItem["endTime"] = chainItem["startTime"] + chainItem["duration"]
 
-            # Remove it from the front
-            tweenObject._tweenChain.shift()
-
-            # Decremt remaining runs and readd it to the chain if having remaining runs
-            if tweenObject._remainingRuns-- > 0
-
-              #console.log("Requeue")
-              # Requeue it
-              lastItem = tweenObject._tweenChain[tweenObject._tweenChain.length - 1]
-              tween["startTime"] = null
-              tween["endTime"] = null
-              tween["inited"] = false
-              tweenObject._tweenChain.push(tween)
+        chainItem["startPos"] = {}
 
 
-          # Continue if its a delay tween
-          if tween.type is "delay"
-            continue
+        for property in tween._properties
+          key = property.split('.')[0]
+          value = tween._object[key]
+
+          chainItem["startPos"][key] = $.extend(true, {}, value);
+
+        chainItem.inited = true
 
 
+      # Check if chainItem has ended
+      if time > chainItem.endTime
 
-          # Elapsed Time of the tween
-          startTime = tween.startTime
-          endTime = tween.endTime
+        # Increment run counter
+        tween._runCounter++
 
-          # Start and end of the tween
-          start = tween.startPos
-          end = tween.property
+        # Reset chainItem data
+        chainItem["startTime"] = null
+        chainItem["endTime"] = null
+        chainItem["inited"] = false
 
 
-          # The elapsed time of the tween
-          elapsed = (time - startTime) / tween.duration
-          elapsed = if elapsed > 1 then  1 else elapsed
-
-          # Calculate the new multiplication value
-          value = tweenObject._easing elapsed
-
-          # TODO , this is heavily shitty.
-          for prop in tweenObject._properties
-            eval("tweenObject._object." + prop + " = start." + prop + " + ( end."+prop+" - start."+prop+" ) * value")
-
-            current = eval("tweenObject._object." + prop)
-            target = eval("end."+prop)
-
-            if (current - target) == 0
-              tween["endTime"] = time - 1
+        # Decrement remaining runs by 1
+        if tween._runCounter %% tween._chain.length == 0
+          tween._remainingRuns -= 1
 
 
 
+        continue
 
-        else
-          tweenObject._complete = true
-          Tween._objects.remove(tweenObject)
-          Tween._oldObjects.push(tweenObject)
+
+      # If chainItem type is a delay
+      if chainItem.type is "delay"
+        continue
+
+      # Elapsed Time of the tween
+      startTime = chainItem.startTime
+      endTime = startTime + chainItem.duration
+
+      # Start and end of the tween
+      start = chainItem.startPos
+      end = chainItem.property
+
+      # The elapsed time of the tween
+      elapsed = (time - startTime) / chainItem.duration
+      elapsed = if elapsed > 1 then  1 else elapsed
+
+      # Calculate the new multiplication value
+      value = tween._easing elapsed
+
+      # TODO , this is heavily shitty.
+      for prop in tween._properties
+        eval("tween._object.#{prop} = start.#{prop} +  ( end.#{prop} - start.#{prop} ) * #{value}")
+        #eval("tween._object.#{prop} = start.#{prop} + ( end.#{prop} - start.#{prop} ) * #{value}")
+
+        """current = eval("tween._object." + prop)
+        target = eval("end."+prop)
+
+        if (current - target) == 0
+          chainItem["endTime"] = time - 1"""
 
 
   # Function for finding properties recursively in an Object
