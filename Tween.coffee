@@ -300,7 +300,7 @@ class Tween
           key = property.split('.')[0]
           value = tween._object[key]
 
-          chainItem["startPos"][key] = $.extend(true, {}, value);
+          chainItem["startPos"][key] = if typeof value == 'object' then $.extend(false, {}, value) else value
 
         chainItem.inited = true
 
@@ -320,9 +320,6 @@ class Tween
         # Decrement remaining runs by 1
         if tween._runCounter %% tween._chain.length == 0
           tween._remainingRuns -= 1
-
-
-
         continue
 
 
@@ -345,16 +342,38 @@ class Tween
       # Calculate the new multiplication value
       value = tween._easing elapsed
 
-      # TODO , this is heavily shitty.
       for prop in tween._properties
-        eval("tween._object.#{prop} = start.#{prop} +  ( end.#{prop} - start.#{prop} ) * #{value}")
-        #eval("tween._object.#{prop} = start.#{prop} + ( end.#{prop} - start.#{prop} ) * #{value}")
+        nextPos = (Tween.resolve(start, prop) + (Tween.resolve(end, prop) - Tween.resolve(start, prop)) * value)
+        Tween.resolve(tween._object, prop, null, nextPos)
 
-        """current = eval("tween._object." + prop)
-        target = eval("end."+prop)
+        #eval("tween._object.#{prop} = start.#{prop} +  ( end.#{prop} - start.#{prop} ) * #{value}")
 
-        if (current - target) == 0
-          chainItem["endTime"] = time - 1"""
+
+
+  Tween.resolve = (obj, path, def, setValue) ->
+    i = undefined
+    len = undefined
+    previous = obj
+    i = 0
+    path = path.split('.')
+    len = path.length
+
+    while i < len
+      if !obj or typeof obj != 'object'
+        return def
+
+      previous = obj
+      obj = obj[path[i]]
+      i++
+
+    if obj == undefined
+      return def
+
+    # If setValue is set, set the returning value to something
+    if setValue
+      previous[path[len-1]] = setValue
+
+    return obj
 
 
   # Function for finding properties recursively in an Object
