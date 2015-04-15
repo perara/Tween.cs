@@ -48,6 +48,11 @@ class Tween
   # @property [Array[Tween]] List of current/ ongoing Tweens
   @_tweens = []
 
+  # Clear all tweens in loop
+  @clear = ->
+    for tween in Tween._tweens
+      tween._complete = true
+
   # @property [Long] Current runtime time, Retreived from GameLoop's update()
   @_currentTime = 0
 
@@ -73,9 +78,9 @@ class Tween
     @_interpolation = Tween.Interpolation.Linear
 
     # Callbacks
-    @_onUpdate = null
-    @_onComplete = null
-    @_onStart = null
+    @_onUpdate = ->
+    @_onComplete = ->
+    @_onStart = ->
 
     # Options
     @_started = false
@@ -157,6 +162,9 @@ class Tween
     # Update endtime with timeLeft
     chainItem.endTime = time + timeLeft
     chainItem.startTime = chainItem.endTime - chainItem.duration
+
+
+
 
 
 ############################################
@@ -358,6 +366,7 @@ class Tween
 
       # Calculate the new multiplication value
       value = tween._easing elapsed
+      tween._onUpdate(chainItem)
 
       for prop in tween._properties
         nextPos = (Tween.resolve(start, prop) + (Tween.resolve(end, prop) - Tween.resolve(start, prop)) * value)
