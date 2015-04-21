@@ -1,4 +1,4 @@
-var Tween = (function() {
+Tween = (function() {
   var ChainItem;
 
   ChainItem = (function() {
