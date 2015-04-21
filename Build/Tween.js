@@ -251,7 +251,7 @@ Tween = (function() {
       for (_k = 0, _len2 = _ref2.length; _k < _len2; _k++) {
         prop = _ref2[_k];
         if (tween.shallow) {
-          tween._object[prop] = start[prop] + end[prop] - (start[prop] * value);
+          tween._object[prop] = start[prop] + (end[prop] - start[prop]) * value;
         } else {
           nextPos = Tween.resolve(start, prop) + (Tween.resolve(end, prop) - Tween.resolve(start, prop)) * value;
           Tween.resolve(tween._object, prop, null, nextPos);

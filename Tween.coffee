@@ -384,12 +384,13 @@ class Tween
 
       for prop in tween._properties
         if tween.shallow
-          tween._object[prop] = start[prop] + end[prop] - (start[prop] * value)
+          tween._object[prop] = start[prop] + (end[prop] - start[prop]) * value
         else
           nextPos = (Tween.resolve(start, prop) + (Tween.resolve(end, prop) - Tween.resolve(start, prop)) * value)
           Tween.resolve(tween._object, prop, null, nextPos)
 
       continue
+
 
   #eval("tween._object.#{prop} = start.#{prop} +  ( end.#{prop} - start.#{prop} ) * #{value}")
 
