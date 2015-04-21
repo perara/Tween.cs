@@ -279,7 +279,7 @@ class Tween
   # IT is called from GameLoop.update()
   # @param [Long] Render runtime in milliseconds
   @update: (time) ->
-    Gotham.Tween._currentTime = time
+    Tween._currentTime = time
 
     # Return if no tweens
     if Tween._tweens.length <= 0

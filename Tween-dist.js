@@ -177,7 +177,7 @@ Tween = (function() {
 
   Tween.update = function(time) {
     var chainItem, elapsed, end, j, key, l, len1, len2, nextPos, prop, property, ref, ref1, results, start, startTime, tween, value;
-    Gotham.Tween._currentTime = time;
+    Tween._currentTime = time;
     if (Tween._tweens.length <= 0) {
       return;
     }
