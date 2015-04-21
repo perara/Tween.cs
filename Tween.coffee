@@ -640,22 +640,20 @@ class Tween
 
 
 
+# UMD (Universal Module Definition)
+((factory) ->
+  if typeof define == 'function' and define.amd
+    # AMD
+    define [], ->
+      Tween
+  else if typeof exports == 'object'
+    # Node.js
+    module.exports = Tween
+  else
+    # Global variable
+    factory.Tween = Tween
+  return
+) this
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-module.exports = Tween
