@@ -617,7 +617,7 @@ Tween = (function() {
 
 })();
 
-(function(factory) {
+(function(root) {
   if (typeof define === 'function' && define.amd) {
     define([], function() {
       return Tween;
@@ -625,7 +625,9 @@ Tween = (function() {
   } else if (typeof exports === 'object') {
     module.exports = Tween;
   } else {
-    factory.Tween = Tween;
+    root.Tween = Tween;
+    console.log(Tween);
+    console.log(root);
   }
 })(this);
 

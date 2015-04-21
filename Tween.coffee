@@ -641,7 +641,7 @@ class Tween
 
 
 # UMD (Universal Module Definition)
-((factory) ->
+((root) ->
   if typeof define == 'function' and define.amd
     # AMD
     define [], ->
@@ -651,9 +651,8 @@ class Tween
     module.exports = Tween
   else
     # Global variable
-    factory.Tween = Tween
+    root.Tween = Tween
+    console.log Tween
+    console.log root
   return
 ) this
-
-
-
