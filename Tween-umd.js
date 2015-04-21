@@ -1,3 +1,4 @@
+var modulo = function(a, b) { return (+a % (b = +b) + b) % b; };
 var Tween = (function() {
   var ChainItem;
 
