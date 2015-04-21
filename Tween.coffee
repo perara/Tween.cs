@@ -82,7 +82,7 @@ class Tween
     @_onComplete = ->
     @_onStart = ->
 
-    # Options
+      # Options
     @_started = false
     @_complete = false
     @_startDelay = 0
@@ -194,6 +194,11 @@ class Tween
 
     # Add properties to the property list
     for prop in Tween.flattenKeys property
+
+      if prop.split(".").length <= 1
+        @shallow = true
+
+
       @_properties.push(prop)
 
     newPath = new ChainItem()
@@ -262,6 +267,7 @@ class Tween
   # @param [Callback] callback The onUpdate callback
   onUpdate: (callback) ->
     @_onUpdate = callback
+    @onUpdate = true
 
   # The onComplete callback
   # Is called when the tween is completed
@@ -295,7 +301,8 @@ class Tween
       # Continue and remove if tween is complete
       if tween._complete
         tween._onComplete(tween._object)
-        Tween._tweens.remove(tween)
+        # Remove element
+        Tween._tweens.splice(Tween._tweens.indexOf(tween), 1);
         continue
 
 
@@ -331,7 +338,7 @@ class Tween
           key = property.split('.')[0]
           value = tween._object[key]
 
-          chainItem.startPos[key] = if typeof value == 'object' then $.extend(false, {}, value) else value
+          chainItem.startPos[key] = if typeof value == 'object' then Tween.clone(value) else value
 
       if time > chainItem.endTime
 
@@ -347,13 +354,12 @@ class Tween
         # Decrement remaining runs by 1
         if tween._runCounter %% tween._chain.length == 0
           tween._remainingRuns -= 1
-
         continue
 
 
       # If chainItem type is a delay
-        if chainItem.type == "delay"
-          continue
+      if chainItem.type == "delay"
+        continue
 
 
       # Elapsed Time of the tween
@@ -371,14 +377,28 @@ class Tween
 
       # Calculate the new multiplication value
       value = tween._easing elapsed
-      tween._onUpdate(chainItem)
+
+      if(tween.onUpdate)
+        tween._onUpdate(chainItem)
+
 
       for prop in tween._properties
-        nextPos = (Tween.resolve(start, prop) + (Tween.resolve(end, prop) - Tween.resolve(start, prop)) * value)
-        Tween.resolve(tween._object, prop, null, nextPos)
+        if tween.shallow
+          tween._object[prop] = start[prop] + end[prop] - (start[prop] * value)
+        else
+          nextPos = (Tween.resolve(start, prop) + (Tween.resolve(end, prop) - Tween.resolve(start, prop)) * value)
+          Tween.resolve(tween._object, prop, null, nextPos)
 
-        #eval("tween._object.#{prop} = start.#{prop} +  ( end.#{prop} - start.#{prop} ) * #{value}")
+      continue
 
+  #eval("tween._object.#{prop} = start.#{prop} +  ( end.#{prop} - start.#{prop} ) * #{value}")
+
+  Tween.clone = (obj) ->
+    target = {}
+    for i of obj
+      if obj.hasOwnProperty(i)
+        target[i] = obj[i]
+    target
 
   Tween.resolve = (obj, path, def, setValue) ->
     i = undefined
@@ -424,9 +444,9 @@ class Tween
       level++
       if typeof obj == 'object' and obj
         Object.keys(obj).forEach (key) ->
-            path.push key
-            recurse obj[key], path, result, level
-            path.pop()
+          path.push key
+          recurse obj[key], path, result, level
+          path.pop()
       else
         result.push path.join(delimiter)
       return result
@@ -641,18 +661,5 @@ class Tween
 
 
 # UMD (Universal Module Definition)
-((root) ->
-  if typeof define == 'function' and define.amd
-    # AMD
-    define [], ->
-      Tween
-  else if typeof exports == 'object'
-    # Node.js
-    module.exports = Tween
-  else
-    # Global variable
-    root.Tween = Tween
-    console.log Tween
-    console.log root
-  return
-) this
+module.exports = Tween
+window.Tween = Tween

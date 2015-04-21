@@ -1,19 +1,9 @@
-Array.prototype.remove = function() {
-  var L, a, ax, what;
-  what = void 0;
-  a = arguments;
-  L = a.length;
-  ax = void 0;
-  while (L && this.length) {
-    what = a[--L];
-    while ((ax = this.indexOf(what)) !== -1) {
-      this.splice(ax, 1);
-    }
-  }
-  return this;
-};
-var modulo = function(a, b) { return (+a % (b = +b) + b) % b; };
-var Tween = (function() {
+(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+'use strict';
+var Tween,
+  __modulo = function(a, b) { return (a % b + +b) % b; };
+
+Tween = (function() {
   var ChainItem;
 
   ChainItem = (function() {
@@ -36,14 +26,14 @@ var Tween = (function() {
   Tween._tweens = [];
 
   Tween.clear = function() {
-    var j, len1, ref, results, tween;
-    ref = Tween._tweens;
-    results = [];
-    for (j = 0, len1 = ref.length; j < len1; j++) {
-      tween = ref[j];
-      results.push(tween._complete = true);
+    var tween, _i, _len, _ref, _results;
+    _ref = Tween._tweens;
+    _results = [];
+    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+      tween = _ref[_i];
+      _results.push(tween._complete = true);
     }
-    return results;
+    return _results;
   };
 
   Tween._currentTime = 0;
@@ -108,7 +98,7 @@ var Tween = (function() {
     var chainItem, elapsedTime, time, timeLeft;
     this._started = true;
     time = performance.now();
-    chainItem = this._chain[modulo(this._runCounter, this._chain.length)];
+    chainItem = this._chain[__modulo(this._runCounter, this._chain.length)];
     elapsedTime = (chainItem.endTime - chainItem.startTime) * chainItem.elapsed;
     timeLeft = chainItem.duration - elapsedTime;
     chainItem.endTime = time + timeLeft;
@@ -120,10 +110,13 @@ var Tween = (function() {
   };
 
   Tween.prototype.to = function(property, duration) {
-    var j, len1, newPath, prop, ref;
-    ref = Tween.flattenKeys(property);
-    for (j = 0, len1 = ref.length; j < len1; j++) {
-      prop = ref[j];
+    var newPath, prop, _i, _len, _ref;
+    _ref = Tween.flattenKeys(property);
+    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+      prop = _ref[_i];
+      if (prop.split(".").length <= 1) {
+        this.shallow = true;
+      }
       this._properties.push(prop);
     }
     newPath = new ChainItem();
@@ -164,17 +157,18 @@ var Tween = (function() {
   };
 
   Tween.prototype.addCutsomProperties = function(properties) {
-    var j, len1, property, results;
-    results = [];
-    for (j = 0, len1 = properties.length; j < len1; j++) {
-      property = properties[j];
-      results.push(this.addProperty(property));
+    var property, _i, _len, _results;
+    _results = [];
+    for (_i = 0, _len = properties.length; _i < _len; _i++) {
+      property = properties[_i];
+      _results.push(this.addProperty(property));
     }
-    return results;
+    return _results;
   };
 
   Tween.prototype.onUpdate = function(callback) {
-    return this._onUpdate = callback;
+    this._onUpdate = callback;
+    return this.onUpdate = true;
   };
 
   Tween.prototype.onComplete = function(callback) {
@@ -186,21 +180,21 @@ var Tween = (function() {
   };
 
   Tween.update = function(time) {
-    var chainItem, elapsed, end, j, key, l, len1, len2, nextPos, prop, property, ref, ref1, results, start, startTime, tween, value;
+    var chainItem, elapsed, end, key, nextPos, prop, property, start, startTime, tween, value, _i, _j, _k, _len, _len1, _len2, _ref, _ref1, _ref2, _results;
     Tween._currentTime = time;
     if (Tween._tweens.length <= 0) {
       return;
     }
-    ref = Tween._tweens;
-    results = [];
-    for (j = 0, len1 = ref.length; j < len1; j++) {
-      tween = ref[j];
+    _ref = Tween._tweens;
+    _results = [];
+    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+      tween = _ref[_i];
       if (!tween) {
         continue;
       }
       if (tween._complete) {
         tween._onComplete(tween._object);
-        Tween._tweens.remove(tween);
+        Tween._tweens.splice(Tween._tweens.indexOf(tween), 1);
         continue;
       }
       if (!tween._started) {
@@ -213,7 +207,7 @@ var Tween = (function() {
         tween._complete = true;
         continue;
       }
-      chainItem = tween._chain[modulo(tween._runCounter, tween._chain.length)];
+      chainItem = tween._chain[__modulo(tween._runCounter, tween._chain.length)];
       if (!chainItem.inited) {
         chainItem.startTime = performance.now();
         chainItem.endTime = chainItem.startTime + chainItem.duration;
@@ -222,12 +216,12 @@ var Tween = (function() {
           break;
         }
         chainItem.startPos = {};
-        ref1 = tween._properties;
-        for (l = 0, len2 = ref1.length; l < len2; l++) {
-          property = ref1[l];
+        _ref1 = tween._properties;
+        for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
+          property = _ref1[_j];
           key = property.split('.')[0];
           value = tween._object[key];
-          chainItem.startPos[key] = typeof value === 'object' ? $.extend(false, {}, value) : value;
+          chainItem.startPos[key] = typeof value === 'object' ? Tween.clone(value) : value;
         }
       }
       if (time > chainItem.endTime) {
@@ -235,13 +229,13 @@ var Tween = (function() {
         chainItem.startTime = null;
         chainItem.endTime = null;
         chainItem.inited = false;
-        if (modulo(tween._runCounter, tween._chain.length) === 0) {
+        if (__modulo(tween._runCounter, tween._chain.length) === 0) {
           tween._remainingRuns -= 1;
         }
         continue;
-        if (chainItem.type === "delay") {
-          continue;
-        }
+      }
+      if (chainItem.type === "delay") {
+        continue;
       }
       startTime = chainItem.startTime;
       start = chainItem.startPos;
@@ -250,20 +244,33 @@ var Tween = (function() {
       chainItem.elapsed = elapsed;
       elapsed = elapsed > 1 ? 1 : elapsed;
       value = tween._easing(elapsed);
-      tween._onUpdate(chainItem);
-      results.push((function() {
-        var len3, o, ref2, results1;
-        ref2 = tween._properties;
-        results1 = [];
-        for (o = 0, len3 = ref2.length; o < len3; o++) {
-          prop = ref2[o];
+      if (tween.onUpdate) {
+        tween._onUpdate(chainItem);
+      }
+      _ref2 = tween._properties;
+      for (_k = 0, _len2 = _ref2.length; _k < _len2; _k++) {
+        prop = _ref2[_k];
+        if (tween.shallow) {
+          tween._object[prop] = start[prop] + end[prop] - (start[prop] * value);
+        } else {
           nextPos = Tween.resolve(start, prop) + (Tween.resolve(end, prop) - Tween.resolve(start, prop)) * value;
-          results1.push(Tween.resolve(tween._object, prop, null, nextPos));
+          Tween.resolve(tween._object, prop, null, nextPos);
         }
-        return results1;
-      })());
+      }
+      continue;
     }
-    return results;
+    return _results;
+  };
+
+  Tween.clone = function(obj) {
+    var i, target;
+    target = {};
+    for (i in obj) {
+      if (obj.hasOwnProperty(i)) {
+        target[i] = obj[i];
+      }
+    }
+    return target;
   };
 
   Tween.resolve = function(obj, path, def, setValue) {
@@ -626,3 +633,10 @@ var Tween = (function() {
   return Tween;
 
 })();
+
+module.exports = Tween;
+
+window.Tween = Tween;
+
+
+},{}]},{},[1]);
