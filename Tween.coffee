@@ -85,6 +85,7 @@ class Tween
     # Options
     @_started = false
     @_complete = false
+    @_startDelay = 0
     @_lastTime = 0
 
     @_runCounter = 0
@@ -129,6 +130,10 @@ class Tween
 ## * Pause
 ##
 ############################################
+
+  # Sets Delay of the start
+  startDelay: (time) ->
+    @_startDelay = time
 
   # Starts the tween calling the _onStart callback
   start: ->
@@ -287,20 +292,20 @@ class Tween
       if not tween
         continue
 
-      # Continue if tween is paused
-      if not tween._started
-        continue
-
-      # Continue if tween is not yet started
-      if time < tween._startTime
-        continue
-
       # Continue and remove if tween is complete
       if tween._complete
         tween._onComplete(tween._object)
         Tween._tweens.remove(tween)
         continue
 
+
+      # Continue if tween is paused
+      if not tween._started
+        continue
+
+      # Continue if tween is not yet started
+      if time < tween._startTime + tween._startDelay
+        continue
 
       # Set Tween to done if no items in chain
       if tween._chain.length <= 0 or tween._remainingRuns <= 0
@@ -353,7 +358,7 @@ class Tween
 
       # Elapsed Time of the tween
       startTime = chainItem.startTime
-      endTime = startTime + chainItem.duration
+      #endTime = startTime + chainItem.duration
 
       # Start and end of the tween
       start = chainItem.startPos
