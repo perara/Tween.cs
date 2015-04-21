@@ -1,0 +1,95 @@
+<html>
+	<head>
+		<script src="./Tween.js"></script>
+		<script src="//rawgit.com/tweenjs/tween.js/master/build/tween.min.js"></script>
+
+	</head>
+	<body>
+
+
+	<div id="item" style="background-color: red; position: absolute; top: 50px; left: 50px; width: 50px; height: 50px;"></div>
+
+
+
+	Testing...
+
+
+
+	</body>
+	<script>
+
+
+		console.log("---------------TEST---------------")
+		console.log("Parameters: 100x10000 Iterations")
+		console.log("----------------------------------")
+
+		var tween2 = new Tween({ x: {y: 500} })
+		//tween.to( { x: {y: 400} }, 2000 )
+		tween2.to( { x: {y: 500} }, 2000 )
+		tween2.easing( Tween.Easing.Linear.None)
+		tween2.start();
+		Tween.update(performance.now())
+
+
+		total = 0
+		for(var l = 0; l < 100; l++)
+		{
+			start = performance.now()
+			for(var i = 0; i < 10000; i++)
+			{
+				Tween.update(performance.now())
+			}
+			total += performance.now() - start
+		}
+		console.log("[DEEP]Tween.cs: " + total / 10) + "ms";
+
+
+		Tween.clear()
+
+		var tween = new Tween({ x: 50 })
+		//tween.to( { x: {y: 400} }, 2000 )
+		tween.to( { x:555 }, 2000 )
+		tween.easing( Tween.Easing.Linear.None)
+		tween.start();
+		Tween.update(performance.now())
+		total = 0
+		for(var l = 0; l < 100; l++)
+		{
+			start = performance.now()
+			for(var i = 0; i < 10000; i++)
+			{
+				Tween.update(performance.now())
+			}
+			total += performance.now() - start
+		}
+		console.log("[SHALLOW]Tween.cs: " + total / 10) + "ms";
+
+
+
+
+
+
+		var tween = new TWEEN.Tween( { x: 50, y: 0 } )
+				.to( { x: 400 }, 2000 )
+				.easing( TWEEN.Easing.Linear.None)
+				.start();
+
+
+		total = 0
+		for(var l = 0; l < 100; l++)
+		{
+			start = performance.now()
+			for(var i = 0; i < 10000; i++)
+			{
+				TWEEN.update(performance.now())
+			}
+			total += performance.now() - start
+		}
+		console.log("[N/A]Tween.js: " + total / 10) + "ms";
+
+
+
+
+
+	</script>
+</html>
