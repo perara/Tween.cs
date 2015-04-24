@@ -1,5 +1,6 @@
 ﻿'use strict'
 
+#
 ﻿# The tween class of Gotham
 # This class animates objects of any format
 # It features to reach deep proprerties in an object
