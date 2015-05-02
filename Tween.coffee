@@ -301,7 +301,7 @@ class Tween
 
       # Continue and remove if tween is complete
       if tween._complete
-        tween._onComplete(tween._object)
+        tween._onComplete(tween)
         # Remove element
         Tween._tweens.splice(Tween._tweens.indexOf(tween), 1);
         continue
@@ -341,7 +341,7 @@ class Tween
 
           chainItem.startPos[key] = if typeof value == 'object' then Tween.clone(value) else value
 
-      if time > chainItem.endTime
+      if time > chainItem.endTime && chainItem.elapsed >= 0.99
 
         # Increment run counter
         tween._runCounter++
@@ -358,9 +358,6 @@ class Tween
         continue
 
 
-      # If chainItem type is a delay
-      if chainItem.type == "delay"
-        continue
 
 
       # Elapsed Time of the tween
@@ -373,8 +370,9 @@ class Tween
 
       # The elapsed time of the tween
       elapsed = (performance.now() - startTime) / chainItem.duration
-      chainItem.elapsed = elapsed
       elapsed = if elapsed > 1 then  1 else elapsed
+      chainItem.elapsed = elapsed
+
 
       # Calculate the new multiplication value
       value = tween._easing elapsed
