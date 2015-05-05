@@ -1,9 +1,15 @@
-﻿'use strict'
-
-#
+﻿
+###*
 ﻿# The tween class of Gotham
 # This class animates objects of any format
 # It features to reach deep proprerties in an object
+# @class Tween
+# @module TweenCS
+# @namespace TweenCS
+###
+
+
+#
 # @example How to use
 #    # Start
 #    tweenTo =
@@ -28,8 +34,19 @@
 #    tween.onStart ->
 #      console.log @ + " started!"
 #    tween.start()
-class Tween
+#
 
+
+
+
+
+
+class Tween
+  ###*
+  # @class ChainItem
+  # @module TweenCS
+  # @namespace TweenCS.ChainItem
+  ###
   class ChainItem
 
     constructor: ->
@@ -193,17 +210,21 @@ class Tween
   # @param [Long] duration Duration of the tween from start --> end (In milliseconds)
   to: (property, duration) ->
 
+    properties = []
+    shallow = false
     # Add properties to the property list
     for prop in Tween.flattenKeys property
 
       if prop.split(".").length <= 1
-        @shallow = true
+        shallow = true
 
-
+      properties.push prop
       @_properties.push(prop)
 
     newPath = new ChainItem()
     newPath.property = property # The Property to translate to
+    newPath.properties = properties
+    newPath.shallow = shallow
     newPath.duration = duration # Duration of the tween event
     newPath.startTime = null # Set when starting tween .start()
     newPath.endTime = null # Set when starting tween .start()
@@ -227,6 +248,7 @@ class Tween
       throw new Error "Time was not a number!"
 
     delayItem =
+      "properties": []
       "duration" : time
       "startTime" : null # Set when starting tween .start()
       "endTime" : null # Set when starting tween .start()
@@ -381,8 +403,8 @@ class Tween
         tween._onUpdate(chainItem)
 
 
-      for prop in tween._properties
-        if tween.shallow
+      for prop in chainItem.properties
+        if chainItem.shallow
           tween._object[prop] = start[prop] + (end[prop] - start[prop]) * value
         else
           nextPos = (Tween.resolve(start, prop) + (Tween.resolve(end, prop) - Tween.resolve(start, prop)) * value)
