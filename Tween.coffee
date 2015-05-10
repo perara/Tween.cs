@@ -204,10 +204,37 @@ class Tween
   # The easing algorithms are found in the Tween.Easing object.
   easing: (easing) ->
     @_easing = easing
+    return @
 
+
+  ###*
+  # Adds a function to the tween chain. Neat for when you want logic to run between two tweens
+  # @method func
+  # @chainable
+  ###
+  func: (_c)->
+    newPath = new ChainItem()
+    newPath.callback = _c
+    newPath.property = null
+    newPath.properties = []
+    newPath.shallow = true
+    newPath.duration = 0
+    newPath.startTime = null
+    newPath.endTime = null
+    newPath.inited = true
+    newPath.next = null
+    newPath.previous = null
+    newPath.type = "func"
+    newPath.elapsed = 0
+    @addToChain newPath
+    return @
+
+  ###*
   # Add tween action to the tween chain
   # @param [Object] property The "goal" property of the tween (Where you want the target object to end up)
   # @param [Long] duration Duration of the tween from start --> end (In milliseconds)
+  # @chainable
+  ###
   to: (property, duration) ->
 
     properties = []
@@ -235,6 +262,8 @@ class Tween
     newPath.elapsed = 0
 
     @addToChain newPath
+
+    return @
 
 
 
@@ -352,7 +381,7 @@ class Tween
         chainItem.endTime = chainItem.startTime + chainItem.duration
         chainItem.inited = true
 
-        if chainItem.type == "delay"
+        if chainItem.type == "delay" or chainItem.type == "func"
           break
 
         chainItem.startPos = {}
@@ -363,6 +392,7 @@ class Tween
 
           chainItem.startPos[key] = if typeof value == 'object' then Tween.clone(value) else value
 
+
       if time > chainItem.endTime && chainItem.elapsed >= 0.99
 
         # Increment run counter
@@ -372,6 +402,7 @@ class Tween
         chainItem.startTime = null
         chainItem.endTime = null
         chainItem.inited = false
+        chainItem.elapsed = 0 #TODO, be careful, Not fully tested
 
 
         # Decrement remaining runs by 1
@@ -380,6 +411,9 @@ class Tween
         continue
 
 
+      # Execute the callback function
+      if chainItem.type == "func"
+        chainItem.callback()
 
 
       # Elapsed Time of the tween
