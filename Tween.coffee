@@ -1,4 +1,78 @@
-﻿
+﻿###*
+# @class ChainItem
+# @module TweenCS
+# @namespace TweenCS
+# @constructor
+###
+class ChainItem
+
+  constructor: ->
+
+    ###*
+    # Which property this chain modifies
+    # @property {Object} property
+    # @private
+    ###
+    @property = null
+
+    ###*
+    # The chain item duration
+    # @property {Integer} duration
+    # @private
+    ###
+    @duration = null
+
+    ###*
+    # The start timestamp of the chainItem
+    # @property {Long} startTime
+    # @private
+    ###
+    @startTime = null
+
+    ###*
+    # The end timestamp of the chainItem
+    # @property {Long} endTime
+    # @private
+    ###
+    @endTime = null
+
+    ###*
+    # If the chainItem has been initialized
+    # @property {Boolean} inited
+    # @private
+    ###
+    @inited = false
+
+    ###*
+    # Which type this chain item is, Delay, Translation etc.
+    # @property {String} type
+    # @private
+    ###
+    @type = null
+
+    ###*
+    # Next chainItem in the loop
+    # @property {TweenCS.ChainItem} next
+    # @private
+    ###
+    @next = null
+
+    ###*
+    # Previous chainItem in the loop
+    # @property {TweenCS.ChainItem} previous
+    # @private
+    ###
+    @previous = null
+
+    ###*
+    # The elapsed percentage of the chainItem (Between 0 and 1)
+    # @property {Number} elapsed
+    # @private
+    ###
+    @elapsed = 0
+
+
+
 ###*
 ﻿# The tween class of Gotham
 # This class animates objects of any format
@@ -6,119 +80,177 @@
 # @class Tween
 # @module TweenCS
 # @namespace TweenCS
+# @constructor
+# @param object {Object} The object to tween
+#
+# @example
+#       # How to use:
+#       # Start
+#       tweenTo =
+#         scale:
+#           x: 2
+#           y: 2
+#       rotation: 0.1
+#
+#       # End
+#       tweenBack =
+#         scale:
+#           x: 1
+#           y: 1
+#       rotation: -0.1
+#
+#       tween = new Tween object
+#       tween.startDelay 500
+#       tween.repeat(Infinity)
+#       tween.easing Tween.Easing.Circular.InOut
+#       tween.to tweenTo, 1500
+#       tween.to tweenBack, 1500
+#       tween.onStart ->
+#         console.log @ + " started!"
+#       tween.start()
 ###
-
-
-#
-# @example How to use
-#    # Start
-#    tweenTo =
-#      scale:
-#        x: 2
-#        y: 2
-#      rotation: 0.1
-#
-#    # End
-#    tweenBack =
-#      scale:
-#        x: 1
-#        y: 1
-#      rotation: -0.1
-#
-#    tween = new Tween object
-#    tween.startDelay 500
-#    tween.repeat(Infinity)
-#    tween.easing Tween.Easing.Circular.InOut
-#    tween.to tweenTo, 1500
-#    tween.to tweenBack, 1500
-#    tween.onStart ->
-#      console.log @ + " started!"
-#    tween.start()
-#
-
-
-
-
-
-
 class Tween
+
   ###*
-  # @class ChainItem
-  # @module TweenCS
-  # @namespace TweenCS.ChainItem
+  # Static list of all ongoing tweens
+  # @property {Array[Tween]} _tweens
+  # @static
+  # @private
   ###
-  class ChainItem
-
-    constructor: ->
-      @property = null
-      @duration = null
-      @startTime = null
-      @endTime = null
-      @inited = false
-      @type = null
-      @next = null
-      @previous = null
-      @elapsed = 0
-
-
-
-
-  # @property [Array[Tween]] List of current/ ongoing Tweens
   @_tweens = []
 
-  # Clear all tweens in loop
+  ###*
+  # Clear all ongoing tweens in loop
+  # @method clear
+  # @static
+  ####
   @clear = ->
     for tween in Tween._tweens
       tween._complete = true
 
-  # @property [Long] Current runtime time, Retreived from GameLoop's update()
+  ###*
+  # Current runtime time, Retreived from GameLoop's update()
+  # @property _currentTime {Long}
+  # @static
+  ###
   @_currentTime = 0
-
 
   # Initializes the Tween object
   # Does however not start the tween
   # Adds "this" tween to the Static tween array
   constructor: (object) ->
 
-    # Object which are to be tweened
+
+    ###*
+    # The object to do tweening on
+    # @property {Object} _object
+    # @private
+    ###
     @_object = object
 
-    # Chain of tweens to be applied to object
+
+    ###*
+    # Chain of tweens to be applied to object (ChainItems)
+    # @property {Array} _chain
+    # @private
+    ###
+
     @_chain = []
 
-    # Properties to tween
+
+    ###*
+    # The properties to process while tweening
+    # @property {Array} _properties
+    # @private
+    ###
     @_properties = []
 
-
-
-
+    ###*
+    # The easing to use, Default is Linear
+    # @property {Tween.Easing} _easing
+    # @private
+    ###
     @_easing = Tween.Easing.Linear.None
+
+    ###*
+    # Which interpolation to use, default is Linear
+    # @property {Tween.Interpolation} _interpolation
+    # @private
+    ###
     @_interpolation = Tween.Interpolation.Linear
 
-    # Callbacks
+    ###*
+    # onUpdate callback
+    # @method _onUpdate
+    # @private
+    ###
     @_onUpdate = ->
+
+    ###*
+    # onComplete callback
+    # @method _onComplete
+    # @private
+    ###
     @_onComplete = ->
+
+    ###*
+    # onStart callback
+    # @method  _onStart
+    # @private
+    ###
     @_onStart = ->
 
-      # Options
+    ###*
+    # If the tween collection has started or not
+    # @property {Boolean} _started
+    # @private
+    ###
     @_started = false
-    @_complete = false
-    @_startDelay = 0
-    @_lastTime = 0
 
+    ###*
+    # If the tween collection is complete or not
+    # @property {Boolean} _complete
+    # @private
+    ###
+    @_complete = false
+
+    ###*
+    # The tween start delay
+    # @property {Number} _startDelay
+    # @private
+    ###
+    @_startDelay = 0
+
+    ###*
+    # Number of runs done (Incremented per chainItem
+    # @property {Number} _runCounter
+    # @private
+    ###
     @_runCounter = 0
+
+    ###*
+    # Number of remaining runs for this tween
+    # @property {Number} _remainingRuns
+    # @private
+    ###
     @_remainingRuns = 1 # Remaining runs the tweet should do (default: 1 time) , Modified by .repeat(xx)
 
-
-
+    # Adds this tween to the static tweens list
     Tween._tweens.push(@)
 
-  # Retrieve "this" tween's TweenChain
-  # @return [Array[Object]] The tween Chain
+  ###*
+  # Retrieve all chainItems of the Tween
+  # @method getTweenChain
+  # @returns {TweenCS.ChainItem} The tween Chain
+  ###
   getTweenChain: ->
     return @_chain
 
-
+  ###*
+  # Adds a new TweenCS.ChainItem to the chain
+  # @method addToChain
+  # @param newPath {TweenCS.ChainItem} The chain item
+  ###
   addToChain: (newPath)->
 
     if @_chain.length > 0
@@ -149,26 +281,41 @@ class Tween
 ##
 ############################################
 
+  ###*
   # Sets Delay of the start
+  # @method startDelay
+  # @param time {Number} Delay in milliseconds
+  ###
   startDelay: (time) ->
     @_startDelay = time
 
-  # Starts the tween calling the _onStart callback
+  ###*
+  # Starts the tween. _onStart callback is called
+  # @method start
+  ###
   start: ->
     @_started = true
     @_onStart(@_object)
 
-  # Stops the tween calling the _onStop callback
-  # TODO - Implement
+  ###*
+  # Stops the tween
+  # @method stop
+  ###
   stop: ->
     @_started = false
     @_complete = true
 
-  # Pauses the tween calling the _onPause callback
-  # TODO - Implement
+  ###*
+  # Pauses the tween.
+  # @method pause
+  ###
   pause: ->
     @_started = false
 
+  ###*
+  # Unpauses the tween.
+  # @method unpause
+  ###
   unpause: ->
     @_started = true
 
@@ -196,12 +343,16 @@ class Tween
 ##
 ############################################
 
+  ###*
   # Set the easing algorithm for the tween
-  # @param [Tween.Easing] easing The easing algorithm
-  # @example How to use
-  #   obj.easing(Tween.Easing.Linear.None)
-  #
   # The easing algorithms are found in the Tween.Easing object.
+  # @method easing
+  # @param easing {Tween.Easing} The easing algorithm
+  # @example
+  #         obj.easing(Tween.Easing.Linear.None)
+  #
+  # @chainable
+  ###
   easing: (easing) ->
     @_easing = easing
     return @
@@ -231,8 +382,9 @@ class Tween
 
   ###*
   # Add tween action to the tween chain
-  # @param [Object] property The "goal" property of the tween (Where you want the target object to end up)
-  # @param [Long] duration Duration of the tween from start --> end (In milliseconds)
+  # @method to
+  # @param property {Object} The "goal" property of the tween (Where you want the target object to end up)
+  # @param duration {Long} Duration of the tween from start --> end (In milliseconds)
   # @chainable
   ###
   to: (property, duration) ->
@@ -268,9 +420,12 @@ class Tween
 
 
 
-
+  ###*
   # Add a delay between two tween goto's
-  # @param [Long] time Delay in Milliseconds
+  # @method delay
+  # @param time {Long} Delay in Milliseconds
+  # @chainable
+  ###
   delay: (time) ->
 
     if typeof time isnt 'number'
@@ -286,27 +441,18 @@ class Tween
       "next": null
 
     @addToChain delayItem
+    return @
 
-
+  ###*
   # How many times you want to repeat the Tween
   # To repeat "forever", use Infinity
-  # @param [Integer] num Number of times to repeat
+  # @method repeat
+  # @param num {Integer} Number of times to repeat
+  # @chainable
+  ###
   repeat: (num) ->
     @_remainingRuns = num
-
-
-  # TODO - Needs Documentation ??!?
-  # @param [Object] property The property
-  addCutsomProperty: (property) ->
-    @_properties.push(property)
-
-  # TODO - Needs Documentation ??!?
-  # @param [Array[Object]] property The properties
-  addCutsomProperties: (properties) ->
-    for property in properties
-      @addProperty(property)
-
-
+    return @
 
 ############################################
 ##
@@ -314,28 +460,41 @@ class Tween
 ##
 ############################################
 
+  ###*
   # The onUpdate callback
   # Is called when the tween is updated
-  # @param [Callback] callback The onUpdate callback
+  # @method onUpdate
+  # @param callback {Callback} The onUpdate callback
+  ###
   onUpdate: (callback) ->
     @_onUpdate = callback
     @onUpdate = true
 
+  ###*
   # The onComplete callback
   # Is called when the tween is completed
-  # @param [Callback] callback The onComplete callback
+  # @method onComplete
+  # @param callback {Callback} The onComplete callback
+  ###
   onComplete: (callback) ->
     @_onComplete = callback
 
+  ###*
   # The onStart callback
   # Is called when the tween is started
-  # @param [Callback] callback The onStart callback
+  # @method onStart
+  # @param callback {Callback} The onStart callback
+  ###
   onStart: (callback) ->
     @_onStart = callback
 
+  ###*
   # Update loop of the tween engine ensures that tweening actually happens
   # IT is called from GameLoop.update()
-  # @param [Long] Render runtime in milliseconds
+  # @method update
+  # @param time {Long} Render runtime in milliseconds
+  # @static
+  ###
   @update: (time) ->
     Tween._currentTime = time
 
@@ -449,6 +608,12 @@ class Tween
 
   #eval("tween._object.#{prop} = start.#{prop} +  ( end.#{prop} - start.#{prop} ) * #{value}")
 
+  ###*
+  # Clones a object
+  # @method clone
+  # @param obj {Object} the object to clone
+  # @static
+  ###
   Tween.clone = (obj) ->
     target = {}
     for i of obj
@@ -456,6 +621,15 @@ class Tween
         target[i] = obj[i]
     target
 
+  ###*
+  # Resolves a string property. Ex: "a.b". which is obj["a"]["b"]
+  # @method resolve
+  # @param obj {Object} the object to resolve
+  # @param path {String} the object path
+  # @param def {Object} default if not found
+  # @param setValue {Object} Value to set on the path
+  # @static
+  ###
   Tween.resolve = (obj, path, def, setValue) ->
     i = undefined
     len = undefined
@@ -481,12 +655,15 @@ class Tween
 
     return obj
 
-
+  ###*
   # Function for finding properties recursively in an Object
-  # @param [Object] obj Start/Parent Node
-  # @param [String] delimiter The Delimeter of the result. Default: "."
-  # @param [Integer] max_depth Max Depth of the recursion
-  # @return [Array] Array with the resulting properties
+  # @method flattenKeys
+  # @param obj {Object} Start/Parent Node
+  # @param delimiter {String} The Delimeter of the result. Default: "."
+  # @param max_depth {Integer} Max Depth of the recursion
+  # @return {Array} Array with the resulting properties
+  # @static
+  ###
   @flattenKeys = (obj, delimiter, max_depth) ->
     delimiter = delimiter or '.'
     max_depth = max_depth or 2
@@ -509,7 +686,52 @@ class Tween
 
     recurse obj, [], [], 0
 
-  # Easing Algorithms
+  ###*
+  # @property {Object} Easing
+  # @property {Object} Easing.Linear
+  # @property {Function} Easing.Linear.None
+  # @property {Object} Easing.Quadratic
+  # @property {Function} Easing.Quadratic.In
+  # @property {Function} Easing.Quadratic.Out
+  # @property {Function} Easing.Quadratic.InOut
+  # @property {Object} Easing.Cubic
+  # @property {Function} Easing.Cubic.In
+  # @property {Function} Easing.Cubic.Out
+  # @property {Function} Easing.Cubic.InOut
+  # @property {Object} Easing.Quartic
+  # @property {Function} Easing.Quartic.In
+  # @property {Function} Easing.Quartic.Out
+  # @property {Function} Easing.Quartic.InOut
+  # @property {Object} Easing.Quintic
+  # @property {Function} Easing.Quintic.In
+  # @property {Function} Easing.Quintic.Out
+  # @property {Function} Easing.Quintic.InOut
+  # @property {Object} Easing.Sinusoidal
+  # @property {Function} Easing.Sinusoidal.In
+  # @property {Function} Easing.Sinusoidal.Out
+  # @property {Function} Easing.Sinusoidal.InOut
+  # @property {Object} Easing.Exponential
+  # @property {Function} Easing.Exponential.In
+  # @property {Function} Easing.Exponential.Out
+  # @property {Function} Easing.Exponential.InOut
+  # @property {Object} Easing.Circular
+  # @property {Function} Easing.Circular.In
+  # @property {Function} Easing.Circular.Out
+  # @property {Function} Easing.Circular.InOut
+  # @property {Object} Easing.Elastic
+  # @property {Function} Easing.Elastic.In
+  # @property {Function} Easing.Elastic.Out
+  # @property {Function} Easing.Elastic.InOut
+  # @property {Object} Easing.Back
+  # @property {Function} Easing.Back.In
+  # @property {Function} Easing.Back.Out
+  # @property {Function} Easing.Back.InOut
+  # @property {Object} Easing.Bounce
+  # @property {Function} Easing.Bounce.In
+  # @property {Function} Easing.Bounce.Out
+  # @property {Function} Easing.Bounce.InOut
+  # @static
+  ###
   @Easing =
     Linear: None: (k) ->
       k
@@ -652,6 +874,18 @@ class Tween
           return Tween.Easing.Bounce.In(k * 2) * 0.5
         Tween.Easing.Bounce.Out(k * 2 - 1) * 0.5 + 0.5
 
+  ###*
+  # @property {Object} Interpolation
+  # @property {Function} Interpolation.Linear
+  # @property {Function} Interpolation.Bezier
+  # @property {Function} Interpolation.CatmullRom
+  # @property {Object} Interpolation.Utils
+  # @property {Function} Interpolation.Utils.Linear
+  # @property {Function} Interpolation.Utils.Bernstein
+  # @property {Function} Interpolation.Utils.Factorial
+  # @property {Function} Interpolation.Utils.CatmullRom
+  # @static
+  ###
   @Interpolation =
     Linear: (v, k) ->
       m = v.length - 1
